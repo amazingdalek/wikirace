@@ -40,6 +40,149 @@ function broadcastAll(lobby, msg) {
   });
 }
 
+// ── GAME SCRIPT injected into every Wikipedia page ──
+const INJECTED_SCRIPT = `
+<style>
+#mw-navigation,#mw-head,#mw-panel,.mw-editsection,
+.vector-header,.vector-page-toolbar,.vector-column-end,
+#siteNotice,.mw-footer,#catlinks,.noprint,
+.navbox,.sidebar,.infobox-navbar{display:none!important}
+body{padding-top:0!important;margin-top:0!important}
+#content,#bodyContent,.mw-body{margin:0!important;padding:1rem 1.5rem!important;max-width:860px}
+a[href^="/wiki-proxy/wiki/"]:not([href*=":"]):not([href*="#"]){
+  color:#1a7fd4!important;cursor:pointer!important;text-decoration:underline}
+</style>
+<script>
+(function(){
+  function getTitle(){
+    var h=document.querySelector('.mw-page-title-main')||document.querySelector('#firstHeading');
+    if(h)return h.textContent.trim();
+    return document.title.replace(/\\s*[\\u2014\\-].*$/,'').trim();
+  }
+  function sendLoaded(){
+    window.parent.postMessage({type:'wiki_loaded',title:getTitle()},'*');
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('a');
+    if(!a)return;
+    var href=a.getAttribute('href')||'';
+    if(href.startsWith('/wiki-proxy/wiki/')&&!href.includes(':')&&!href.includes('#')){
+      e.preventDefault();e.stopPropagation();
+      var raw=decodeURIComponent(href.replace('/wiki-proxy/wiki/','')).replace(/_/g,' ');
+      window.parent.postMessage({type:'wiki_navigate',title:raw,href:href},'*');
+    } else if(href.startsWith('#')||href===''){
+      /* anchor scroll OK */
+    } else if(!href.startsWith('javascript')){
+      e.preventDefault();
+    }
+  },true);
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',sendLoaded);}
+  else{sendLoaded();}
+})();
+<\/script>`;
+
+const ERROR_PAGE = (title, msg) => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>body{font-family:sans-serif;background:#0a0a0a;color:#f0ede6;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:16px;text-align:center;padding:2rem}
+h2{color:#d4ff00;font-size:22px}p{color:#888;font-size:14px}strong{color:#aaa}
+button{padding:11px 22px;background:#d4ff00;color:#000;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px}
+button.sec{background:transparent;color:#666;border:1px solid #333;margin-top:0}
+button:hover{opacity:.85}</style></head><body>
+<h2>Page introuvable</h2><p>${msg}</p>
+<p><strong>${title.replace(/</g,'&lt;')}</strong></p>
+<button onclick="window.parent.postMessage({type:'wiki_retry',title:${JSON.stringify(title)}},'*')">Recharger</button>
+<button class="sec" onclick="window.parent.postMessage({type:'wiki_back'},'*')">Page precedente</button>
+</body></html>`;
+
+function fetchWiki(wikiPath, qs, res, attempt) {
+  const options = {
+    hostname: 'fr.wikipedia.org',
+    path: wikiPath + qs,
+    method: 'GET',
+    timeout: 10000,
+    headers: {
+      'User-Agent': 'WikiRaceGame/1.0 (educational multiplayer game)',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Encoding': 'identity',
+      'Accept-Language': 'fr-FR,fr;q=0.9',
+      'Connection': 'keep-alive',
+    }
+  };
+
+  const proxyReq = https.request(options, (wikiRes) => {
+    const status = wikiRes.statusCode;
+
+    // Follow redirects
+    if ([301, 302, 303, 307, 308].includes(status)) {
+      const location = wikiRes.headers['location'] || '';
+      wikiRes.resume();
+      if (attempt >= 5) { res.writeHead(502); res.end('Too many redirects'); return; }
+      let newPath = location
+        .replace('https://fr.wikipedia.org', '')
+        .replace('//fr.wikipedia.org', '');
+      if (newPath.startsWith('/wiki/') || newPath.startsWith('/w/')) {
+        return fetchWiki(newPath, '', res, attempt + 1);
+      }
+      res.writeHead(302, { Location: '/wiki-proxy' + newPath });
+      res.end();
+      return;
+    }
+
+    const ct = wikiRes.headers['content-type'] || '';
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', ct.includes('text/html') ? 'text/html; charset=utf-8' : ct);
+      res.setHeader('Cache-Control', 'public, max-age=180');
+    }
+
+    if (ct.includes('text/html')) {
+      let body = '';
+      wikiRes.setEncoding('utf8');
+      wikiRes.on('data', c => body += c);
+      wikiRes.on('end', () => {
+        if (status === 404 || status === 410 || body.includes('noarticletext')) {
+          const m = wikiPath.match(/\/wiki\/(.+)/);
+          const t = m ? decodeURIComponent(m[1]).replace(/_/g, ' ') : wikiPath;
+          if (!res.headersSent) { res.writeHead(200); res.end(ERROR_PAGE(t, 'Cette page Wikipedia n\'existe pas ou a ete deplacee.')); }
+          return;
+        }
+        body = body
+          .replace(/href="\/wiki\//g, 'href="/wiki-proxy/wiki/')
+          .replace(/href="\/w\//g, 'href="/wiki-proxy/w/')
+          .replace(/action="\/w\//g, 'action="/wiki-proxy/w/')
+          .replace(/src="\/\/upload\.wikimedia\.org/g, 'src="https://upload.wikimedia.org')
+          .replace(/srcset="\/\/upload\.wikimedia\.org/g, 'srcset="https://upload.wikimedia.org')
+          .replace(/src="\/static\//g, 'src="https://fr.wikipedia.org/static/')
+          .replace(/href="\/static\//g, 'href="https://fr.wikipedia.org/static/')
+          .replace(/<link[^>]+rel="canonical"[^>]*>/gi, '')
+          .replace(/<meta[^>]+http-equiv="refresh"[^>]*>/gi, '');
+        if (body.includes('</body>')) body = body.replace('</body>', INJECTED_SCRIPT + '\n</body>');
+        else body += INJECTED_SCRIPT;
+        if (!res.headersSent) { res.writeHead(200); res.end(body); }
+      });
+      wikiRes.on('error', () => { if (!res.headersSent) { res.writeHead(502); res.end('Stream error'); } });
+    } else {
+      if (!res.headersSent) res.writeHead(status);
+      wikiRes.pipe(res);
+    }
+  });
+
+  proxyReq.on('timeout', () => {
+    proxyReq.destroy();
+    if (attempt < 2) return fetchWiki(wikiPath, qs, res, attempt + 1);
+    const m = wikiPath.match(/\/wiki\/(.+)/);
+    const t = m ? decodeURIComponent(m[1]).replace(/_/g, ' ') : wikiPath;
+    if (!res.headersSent) { res.writeHead(200); res.end(ERROR_PAGE(t, 'Wikipedia met trop de temps a repondre. Reessaie !')); }
+  });
+
+  proxyReq.on('error', (e) => {
+    if (attempt < 2) return setTimeout(() => fetchWiki(wikiPath, qs, res, attempt + 1), 800);
+    const m = wikiPath.match(/\/wiki\/(.+)/);
+    const t = m ? decodeURIComponent(m[1]).replace(/_/g, ' ') : wikiPath;
+    if (!res.headersSent) { res.writeHead(200); res.end(ERROR_PAGE(t, 'Erreur reseau : ' + e.message)); }
+  });
+
+  proxyReq.end();
+}
+
 // ── HTTP SERVER ──
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
@@ -52,83 +195,11 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
-  // ── Wikipedia proxy ──
+  // ── Wikipedia proxy (with redirect following + retry + error page) ──
   if (pathname.startsWith('/wiki-proxy/')) {
     const wikiPath = pathname.replace('/wiki-proxy', '');
     const qs = parsed.search || '';
-    const target = `https://fr.wikipedia.org${wikiPath}${qs}`;
-
-    const options = {
-      hostname: 'fr.wikipedia.org',
-      path: wikiPath + qs,
-      method: 'GET',
-      headers: {
-        'User-Agent': 'WikiRaceGame/1.0 (educational game)',
-        'Accept': req.headers['accept'] || '*/*',
-        'Accept-Encoding': 'identity',
-        'Accept-Language': 'fr',
-      }
-    };
-
-    const proxy = https.request(options, (wikiRes) => {
-      let ct = wikiRes.headers['content-type'] || '';
-      res.setHeader('Content-Type', ct);
-      res.setHeader('Cache-Control', 'public, max-age=300');
-
-      if (ct.includes('text/html')) {
-        let body = '';
-        wikiRes.setEncoding('utf8');
-        wikiRes.on('data', c => body += c);
-        wikiRes.on('end', () => {
-          // Rewrite internal links to go through our proxy
-          body = body
-            .replace(/href="\/wiki\//g, 'href="/wiki-proxy/wiki/')
-            .replace(/href="\/w\//g, 'href="/wiki-proxy/w/')
-            .replace(/src="\/\/upload\.wikimedia\.org/g, 'src="https://upload.wikimedia.org')
-            .replace(/src="\/static\//g, 'src="https://fr.wikipedia.org/static/')
-            .replace(/href="\/static\//g, 'href="https://fr.wikipedia.org/static/')
-            .replace(/<link[^>]+rel="canonical"[^>]*>/gi, '')
-            // Inject game script to capture clicks & send to parent
-            .replace('</body>', `
-<script>
-(function(){
-  function getTitle(){
-    var h=document.querySelector('#firstHeading .mw-page-title-main')||document.querySelector('#firstHeading');
-    return h?h.textContent.trim():document.title.replace(/\\s*[-—].*$/,'').trim();
-  }
-  document.addEventListener('click',function(e){
-    var a=e.target.closest('a');
-    if(!a)return;
-    var href=a.getAttribute('href');
-    if(!href)return;
-    if(href.startsWith('/wiki-proxy/wiki/')&&!href.includes(':')&&!href.includes('#')){
-      e.preventDefault();
-      var rawTitle=decodeURIComponent(href.replace('/wiki-proxy/wiki/','')).replace(/_/g,' ');
-      window.parent.postMessage({type:'wiki_navigate',title:rawTitle,href:href},'*');
-    } else if(href.startsWith('/wiki-proxy/wiki/')&&href.includes('#')){
-      e.preventDefault();
-    } else if(!href.startsWith('/wiki-proxy/wiki/')&&!href.startsWith('#')&&!href.startsWith('javascript')){
-      e.preventDefault();
-    }
-  });
-  window.parent.postMessage({type:'wiki_loaded',title:getTitle()},'*');
-})();
-<\/script>
-</body>`);
-          res.writeHead(200);
-          res.end(body);
-        });
-      } else {
-        res.writeHead(wikiRes.statusCode);
-        wikiRes.pipe(res);
-      }
-    });
-
-    proxy.on('error', (e) => {
-      res.writeHead(502);
-      res.end('Proxy error: ' + e.message);
-    });
-    proxy.end();
+    fetchWiki(wikiPath, qs, res, 0);
     return;
   }
 

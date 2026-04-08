@@ -506,30 +506,75 @@ function launchGame(){
 }
 
 // ── WIKI NAVIGATION ──
-function navigateTo(title, isFirst=false){
+let navLock=false;
+let loadTimeout=null;
+
+function navigateTo(title,isFirst=false){
+  if(navLock&&!isFirst)return;
+  if(G.myFinished&&!isFirst)return;
+  navLock=true; setTimeout(()=>navLock=false,600);
   const frame=document.getElementById('wiki-frame');
-  const proxyURL=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(title));
-  frame.src=proxyURL;
+  const banner=document.getElementById('g-page');
+  banner.textContent='Chargement…'; banner.style.color='var(--muted)';
+  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(title));
   if(!isFirst){G.myClicks++;document.getElementById('g-clicks').textContent=G.myClicks;}
-  if(isFirst) G.myPath=[title]; else if(G.myPath[G.myPath.length-1]!==title) G.myPath.push(title);
-  document.getElementById('g-page').textContent=title;
-  renderMyPath();
-  checkWin(title);
-  broadcastMyUpdate();
+  if(isFirst)G.myPath=[title]; else if(G.myPath[G.myPath.length-1]!==title)G.myPath.push(title);
+  renderMyPath(); checkWin(title); broadcastMyUpdate();
+  clearTimeout(loadTimeout);
+  loadTimeout=setTimeout(()=>{
+    banner.textContent=title+' — timeout ?'; banner.style.color='var(--red)';
+    showRetryBar(title);
+  },9000);
 }
 
-window.addEventListener('message', e=>{
-  if(e.data&&e.data.type==='wiki_navigate'){navigateTo(e.data.title);}
-  if(e.data&&e.data.type==='wiki_loaded'){
-    const t=e.data.title;
-    if(t&&t!==G.myPath[G.myPath.length-1]){
-      document.getElementById('g-page').textContent=t;
-      if(G.myPath.length>0&&G.myPath[G.myPath.length-1]!==t){
+function showRetryBar(title){
+  let bar=document.getElementById('retry-bar');
+  if(!bar){bar=document.createElement('div');bar.id='retry-bar';
+    bar.style.cssText='position:absolute;top:0;left:0;right:0;background:#1a0404;border-bottom:1px solid #5a1010;padding:8px 16px;display:flex;align-items:center;gap:10px;z-index:50;font-size:13px;color:var(--red)';
+    document.querySelector('.frame-area').appendChild(bar);}
+  bar.style.display='flex';
+  bar.innerHTML='<span style="flex:1">La page ne repond pas.</span>'
+    +'<button onclick="retryPage()" style="padding:6px 14px;background:var(--accent);color:#000;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">Reessayer</button>'
+    +'<button onclick="goBack()" style="padding:6px 14px;background:transparent;color:var(--muted2);border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer">Page precedente</button>';
+}
+function hideRetryBar(){const b=document.getElementById('retry-bar');if(b)b.style.display='none';}
+function retryPage(){
+  clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
+  const title=G.myPath[G.myPath.length-1]||G.gameStart;
+  const frame=document.getElementById('wiki-frame');
+  document.getElementById('g-page').textContent='Chargement…';
+  document.getElementById('g-page').style.color='var(--muted)';
+  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(title));
+  loadTimeout=setTimeout(()=>showRetryBar(title),9000);
+}
+function goBack(){
+  clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
+  if(G.myPath.length>1)G.myPath.pop();
+  const prev=G.myPath[G.myPath.length-1]||G.gameStart;
+  const frame=document.getElementById('wiki-frame');
+  document.getElementById('g-page').textContent='Chargement…';
+  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(prev));
+  renderMyPath(); broadcastMyUpdate();
+  loadTimeout=setTimeout(()=>showRetryBar(prev),9000);
+}
+
+window.addEventListener('message',e=>{
+  if(!e.data||typeof e.data!=='object')return;
+  switch(e.data.type){
+    case'wiki_navigate': navigateTo(e.data.title); break;
+    case'wiki_loaded':{
+      clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
+      const t=e.data.title; if(!t)break;
+      const banner=document.getElementById('g-page');
+      banner.textContent=t; banner.style.color='';
+      if(G.myPath.length>0&&norm(G.myPath[G.myPath.length-1])!==norm(t)){
         G.myPath[G.myPath.length-1]=t;
-        renderMyPath();
-        checkWin(t);
+        renderMyPath(); checkWin(t); broadcastMyUpdate();
       }
+      break;
     }
+    case'wiki_retry': retryPage(); break;
+    case'wiki_back':  goBack();  break;
   }
 });
 
