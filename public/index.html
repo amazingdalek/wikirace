@@ -22,6 +22,7 @@
   --green:#00e87a;
   --red:#ff3b3b;
   --blue:#3d9eff;
+  --orange:#ff9f1a;
   --radius:8px;
   --radius-lg:14px;
   --radius-xl:20px;
@@ -82,18 +83,20 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:flex;flex-direction:column;gap:14px}
 .config-title{font-size:14px;font-weight:500;color:var(--text)}
 .config-row{display:flex;gap:10px}
-.config-row>div{flex:1}
+.config-row>div{flex:1;display:flex;flex-direction:column}
 .presets-scroll{display:flex;gap:6px;flex-wrap:wrap}
 .preset-btn{padding:5px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--muted2);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:'DM Sans',sans-serif}
 .preset-btn:hover{border-color:var(--accent);color:var(--accent)}
 .waiting-msg{text-align:center;padding:1.5rem;color:var(--muted);font-size:14px;background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border)}
+.random-btn{padding:6px 12px;border-radius:4px;border:1px dashed var(--muted);background:none;color:var(--muted);font-size:11px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;align-self:flex-start;margin-top:4px}
+.random-btn:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ══ GAME ══ */
 #screen-game{height:100vh;display:none;flex-direction:column}
 #screen-game.active{display:flex}
 .topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;gap:8px}
 .route-pill{display:flex;align-items:center;gap:6px;flex:1;min-width:0;overflow:hidden}
-.pill{font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.pill{font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
 .pill-start{background:#041a0c;color:var(--green);border:1px solid #0d3d1c}
 .pill-end{background:#1a0404;color:var(--red);border:1px solid #3d0d0d}
 .pill-sep{color:var(--muted);font-size:13px;flex-shrink:0}
@@ -123,6 +126,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .host-controls{display:flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
 .host-label{font-size:11px;color:var(--muted);flex:1}
 
+/* ── LOADING OVERLAY ── */
+.loading-overlay{display:none;position:absolute;inset:0;background:rgba(255,255,255,.92);z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay.on{display:flex}
+.loading-overlay .spinner-lg{width:36px;height:36px;border:3px solid #ddd;border-top-color:#0645ad;border-radius:50%;animation:spin .6s linear infinite}
+.loading-overlay .load-text{font-size:14px;color:#666;font-family:'DM Sans',sans-serif}
+.loading-overlay .load-sub{font-size:12px;color:#999;font-family:'DM Sans',sans-serif}
+
 /* ══ RESULTS ══ */
 #screen-results{padding:0;justify-content:flex-start;align-items:stretch}
 .results-inner{max-width:600px;width:100%;margin:0 auto;padding:2.5rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem}
@@ -131,6 +141,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .results-sub{font-size:14px;color:var(--muted);margin-top:4px}
 .podium{display:flex;flex-direction:column;gap:6px}
 .res-row{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);text-align:left}
+.res-row.winner{border-color:var(--accent);box-shadow:0 0 20px rgba(212,255,0,.08)}
 .res-rank{font-family:'Bebas Neue',sans-serif;font-size:30px;min-width:32px;color:var(--muted);line-height:1;padding-top:2px}
 .res-rank.gold{color:var(--accent)}
 .res-rank.silver{color:#b8b8b8}
@@ -139,8 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .res-name{font-size:15px;font-weight:500}
 .res-stats{font-size:12px;color:var(--muted);margin-top:2px}
 .res-path{font-size:11px;color:var(--muted2);margin-top:5px;font-family:'DM Mono',monospace;line-height:1.6;word-break:break-word}
-.path-step{display:inline-flex;align-items:center;gap:3px}
-.path-step-node{padding:1px 5px;background:var(--surface2);border-radius:3px;border:1px solid var(--border)}
+.path-step-node{display:inline;padding:1px 5px;background:var(--surface2);border-radius:3px;border:1px solid var(--border)}
 .path-step-node.ps-start{background:#041a0c;border-color:#0d3d1c;color:var(--green)}
 .path-step-node.ps-end{background:#1a0404;border-color:#3d0d0d;color:var(--red)}
 .path-step-sep{color:var(--muted)}
@@ -165,13 +175,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 @keyframes wbounce{0%{transform:scale(0) rotate(-6deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1}}
 
 /* ══ TOAST ══ */
-.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 18px;font-size:14px;color:var(--text);z-index:700;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 18px;font-size:14px;color:var(--text);z-index:700;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
 .toast.on{opacity:1}
 
 /* ══ STATUS ══ */
-.ws-status{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.ws-status{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
 .ws-status.connected{background:var(--green)}
 .ws-status.error{background:var(--red)}
+.ws-status.connecting{background:var(--orange);animation:pulse .6s ease-in-out infinite alternate}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
@@ -194,7 +205,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
     <div class="divider">ou rejoindre</div>
     <div>
       <label class="label">Code du lobby</label>
-      <input class="input" id="inp-code" placeholder="Ex: WIKI42" maxlength="8" style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off">
+      <input class="input" id="inp-code" placeholder="Ex: A3K7P" maxlength="8" style="text-transform:uppercase;letter-spacing:.1em" autocomplete="off">
     </div>
     <button class="btn" onclick="doJoin()">Rejoindre la partie</button>
     <div style="display:flex;align-items:center;gap:6px;padding-top:4px">
@@ -202,7 +213,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
       <span style="font-size:12px;color:var(--muted)" id="ws-label">Non connecté</span>
     </div>
   </div>
-  <p style="font-size:12px;color:var(--muted);max-width:340px;text-align:center">Joue avec tes amis depuis n'importe où dans le monde.</p>
+  <p style="font-size:12px;color:var(--muted);max-width:340px;text-align:center">Navigue de page en page sur Wikipédia plus vite que tes amis !</p>
 </div>
 
 <!-- ══ LOBBY ══ -->
@@ -219,11 +230,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
   <div class="code-box">
     <div>
       <div class="label">Code d'invitation</div>
-      <div class="code-val mono" id="lob-code">------</div>
+      <div class="code-val display" id="lob-code">------</div>
     </div>
     <div class="code-actions">
-      <button class="copy-btn" onclick="copyCode()">Copier le code</button>
-      <button class="share-btn" onclick="shareURL()">Partager le lien</button>
+      <button class="copy-btn" onclick="copyCode()">📋 Copier le code</button>
+      <button class="share-btn" onclick="shareURL()">🔗 Partager le lien</button>
     </div>
   </div>
 
@@ -236,12 +247,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
     <div class="config-title">Configuration de la partie</div>
     <div class="config-row">
       <div>
-        <label class="label">Page de départ</label>
+        <label class="label">📍 Page de départ</label>
         <input class="input" id="cfg-start" value="Café" placeholder="Ex: Napoléon">
+        <button class="random-btn" onclick="doRandom('cfg-start', this)">🎲 Aléatoire</button>
       </div>
       <div>
-        <label class="label">Page d'arrivée</label>
+        <label class="label">🏁 Page d'arrivée</label>
         <input class="input" id="cfg-end" value="Tour Eiffel" placeholder="Ex: Lune">
+        <button class="random-btn" onclick="doRandom('cfg-end', this)">🎲 Aléatoire</button>
       </div>
     </div>
     <div>
@@ -266,7 +279,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
     </div>
     <div class="topbar-right">
       <div>
-        <div class="timer mono" id="g-timer">00:00</div>
+        <div class="timer display" id="g-timer">00:00</div>
         <div class="clicks-ctr"><span id="g-clicks">0</span> clics</div>
       </div>
     </div>
@@ -274,6 +287,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
   <div class="players-bar" id="g-players"></div>
   <div class="frame-area">
     <iframe id="wiki-frame" class="wiki-frame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    <div class="loading-overlay" id="wiki-loading">
+      <div class="spinner-lg"></div>
+      <div class="load-text">Chargement de la page…</div>
+      <div class="load-sub" id="wiki-loading-title"></div>
+    </div>
     <div class="page-banner">
       <span style="color:var(--muted);font-size:11px;flex-shrink:0">Page actuelle :</span>
       <span class="page-banner-title" id="g-page">—</span>
@@ -316,8 +334,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
     <div class="ov-title display" id="ov-fin-title">ARRIVÉ !</div>
     <div class="ov-sub" id="ov-fin-sub">Tu as trouvé la page !</div>
     <div class="ov-stat" id="ov-fin-stat"></div>
-    <div class="ov-sub">En attente des autres joueurs…</div>
-    <span class="spinner"></span>
+    <div class="ov-sub" id="ov-fin-wait">Résultats dans un instant…</div>
   </div>
 </div>
 
@@ -328,388 +345,738 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════════════════
+//   WIKIRACE v2.0 — Client
+//   Fixes: retry logic, redirect handling, robust nav
+// ═══════════════════════════════════════════════════════
+
 const PRESETS=[
   {s:"Café",e:"Tour Eiffel"},{s:"Napoléon Bonaparte",e:"Lune"},
   {s:"Pieuvre",e:"Jeux olympiques"},{s:"Girafe",e:"Révolution française"},
   {s:"Chocolat",e:"Albert Einstein"},{s:"Football",e:"ADN"},
   {s:"Requin",e:"Piano"},{s:"Mozart",e:"Internet"},
   {s:"Crocodile",e:"Démocratie"},{s:"Pizza",e:"Espace"},
+  {s:"Fromage",e:"Japon"},{s:"Volcan",e:"Mona Lisa"},
 ];
 const COLORS=["#7F77DD","#1D9E75","#D85A30","#D4537E","#378ADD","#BA7517","#E24B4A","#5DCAA5"];
 const ini=n=>n.slice(0,2).toUpperCase();
 const ac=i=>COLORS[i%COLORS.length];
-const norm=t=>t.toLowerCase().replace(/_/g,' ').trim();
+const norm=t=>(t||'').toLowerCase().replace(/_/g,' ').trim();
 const fmtMs=ms=>{const s=Math.floor(ms/1000),m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
-const slug=t=>t.replace(/ /g,'_');
+const slug=t=>(t||'').replace(/ /g,'_');
 
-// ── CONFIG ──
-// Auto-detect server URL: same origin in production, localhost in dev
-const SERVER_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? `ws://${window.location.host}`
-  : `wss://${window.location.host}`;
 const PROXY_BASE = '/wiki-proxy';
+
+// ── AUTO-DETECT WS URL ──
+const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const SERVER_URL = `${wsProtocol}//${window.location.host}`;
 
 // ── STATE ──
 let ws = null;
-let myPid = sessionStorage.getItem('wr_pid') || (()=>{const p='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);sessionStorage.setItem('wr_pid',p);return p;})();
+let wsReconnectTimer = null;
+let myPid = sessionStorage.getItem('wr_pid') || (()=>{
+  const p='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  sessionStorage.setItem('wr_pid',p);
+  return p;
+})();
+
 let G = {
   name:'', code:'', isHost:false, phase:'home',
   players:{}, gameStart:'', gameEnd:'',
   myPath:[], myClicks:0, myFinished:false, myFinishTime:0,
   timerStart:0, timerIv:null,
+  navigating: false,       // prevents double-clicks
+  lastNavTitle: '',         // last title we tried to navigate to
+  navRetryCount: 0,         // retry counter
 };
 
-// ── WS ──
+// ═════════════════════════════════
+//  WEBSOCKET
+// ═════════════════════════════════
 function connectWS(cb) {
-  if(ws && ws.readyState <= 1){cb&&cb();return;}
+  if(ws && ws.readyState <= 1){ cb&&cb(); return; }
+  setWSStatus('connecting');
   ws = new WebSocket(SERVER_URL);
-  ws.onopen = ()=>{setWSStatus('connected');cb&&cb();};
-  ws.onclose = ()=>{setWSStatus('');};
-  ws.onerror = ()=>{setWSStatus('error');toast('Connexion impossible au serveur.');};
+
+  ws.onopen = () => {
+    setWSStatus('connected');
+    // Start keepalive
+    if(wsReconnectTimer) clearInterval(wsReconnectTimer);
+    wsReconnectTimer = setInterval(() => {
+      if(ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'}));
+    }, 25000);
+    cb && cb();
+  };
+
+  ws.onclose = () => {
+    setWSStatus('');
+    if(wsReconnectTimer) clearInterval(wsReconnectTimer);
+    // Auto-reconnect if in game
+    if(G.phase === 'playing' || G.phase === 'lobby') {
+      setTimeout(() => {
+        toast('Reconnexion…');
+        connectWS(() => {
+          // Re-join the lobby
+          if(G.code) {
+            send({type:'join_lobby', pid:myPid, name:G.name, code:G.code});
+          }
+        });
+      }, 2000);
+    }
+  };
+
+  ws.onerror = () => { setWSStatus('error'); };
   ws.onmessage = e => handleServer(JSON.parse(e.data));
 }
-function send(obj){if(ws&&ws.readyState===1)ws.send(JSON.stringify(obj));}
-function setWSStatus(s){
-  document.querySelectorAll('.ws-status').forEach(d=>{d.className='ws-status'+(s?' '+s:'');});
-  const l=document.getElementById('ws-label');
-  if(l)l.textContent=s==='connected'?'Connecté':s==='error'?'Erreur de connexion':'Non connecté';
+
+function send(obj) {
+  if(ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
 }
 
-// ── SERVER MESSAGES ──
-function handleServer(msg){
-  switch(msg.type){
-    case'lobby_created': G.code=msg.code; G.phase='lobby'; renderLobby(msg.lobby); showScreen('lobby'); break;
-    case'lobby_joined':  G.code=msg.code; G.phase='lobby'; renderLobby(msg.lobby); showScreen('lobby'); break;
-    case'player_joined': renderLobby(msg.lobby); break;
-    case'player_left':   renderLobby(msg.lobby); toast(msg.pid+' a quitté'); break;
-    case'player_update': updatePlayer(msg); break;
-    case'game_start':    onGameStart(msg); break;
-    case'game_end':      onGameEnd(msg.results); break;
-    case'back_to_lobby': G.phase='lobby'; renderLobby(msg.lobby); showScreen('lobby'); break;
-    case'error':         toast(msg.msg,'red'); break;
+function setWSStatus(s) {
+  document.querySelectorAll('.ws-status').forEach(d => {
+    d.className = 'ws-status' + (s ? ' '+s : '');
+  });
+  const l = document.getElementById('ws-label');
+  if(l) {
+    const labels = { connected:'Connecté', error:'Erreur de connexion', connecting:'Connexion…' };
+    l.textContent = labels[s] || 'Non connecté';
   }
 }
 
-// ── HOME ──
-function getName(){
-  let n=document.getElementById('inp-name').value.trim();
-  if(!n){n='Joueur'+Math.floor(Math.random()*999);document.getElementById('inp-name').value=n;}
+// ═════════════════════════════════
+//  SERVER MESSAGES
+// ═════════════════════════════════
+function handleServer(msg) {
+  switch(msg.type) {
+    case 'lobby_created':
+      G.code = msg.code; G.phase = 'lobby';
+      renderLobby(msg.lobby); showScreen('lobby');
+      break;
+    case 'lobby_joined':
+      G.code = msg.code; G.phase = 'lobby';
+      renderLobby(msg.lobby); showScreen('lobby');
+      break;
+    case 'player_joined':
+      renderLobby(msg.lobby);
+      toast('Un joueur a rejoint !');
+      break;
+    case 'player_left':
+      renderLobby(msg.lobby);
+      break;
+    case 'player_update':
+      updatePlayer(msg);
+      break;
+    case 'game_start':
+      onGameStart(msg);
+      break;
+    case 'game_end':
+      onGameEnd(msg.results, msg.winnerPid);
+      break;
+    case 'back_to_lobby':
+      G.phase = 'lobby';
+      renderLobby(msg.lobby);
+      showScreen('lobby');
+      break;
+    case 'error':
+      toast(msg.msg, 'red');
+      break;
+    case 'pong':
+      break;
+  }
+}
+
+// ═════════════════════════════════
+//  HOME
+// ═════════════════════════════════
+function getName() {
+  let n = document.getElementById('inp-name').value.trim();
+  if(!n) {
+    n = 'Joueur' + Math.floor(Math.random()*999);
+    document.getElementById('inp-name').value = n;
+  }
   return n;
 }
-function doCreate(){
-  G.name=getName();G.isHost=true;
-  connectWS(()=>send({type:'create_lobby',pid:myPid,name:G.name}));
-}
-function doJoin(){
-  G.name=getName();G.isHost=false;
-  const code=document.getElementById('inp-code').value.trim().toUpperCase();
-  if(!code){toast('Entre un code de lobby.');return;}
-  connectWS(()=>send({type:'join_lobby',pid:myPid,name:G.name,code}));
+
+function doCreate() {
+  G.name = getName(); G.isHost = true;
+  connectWS(() => send({type:'create_lobby', pid:myPid, name:G.name}));
 }
 
-// Check URL for auto-join code
-window.addEventListener('load',()=>{
+function doJoin() {
+  G.name = getName(); G.isHost = false;
+  const code = document.getElementById('inp-code').value.trim().toUpperCase();
+  if(!code) { toast('Entre un code de lobby.'); return; }
+  connectWS(() => send({type:'join_lobby', pid:myPid, name:G.name, code}));
+}
+
+// Auto-join from URL
+window.addEventListener('load', () => {
   buildPresets();
-  const p=new URLSearchParams(window.location.search);
-  const c=p.get('code');
-  if(c)document.getElementById('inp-code').value=c.toUpperCase();
+  const p = new URLSearchParams(window.location.search);
+  const c = p.get('code');
+  if(c) document.getElementById('inp-code').value = c.toUpperCase();
 });
 
-// ── LOBBY ──
-function renderLobby(lobby){
-  G.players=lobby.players||{};
-  G.gameStart=lobby.gameStart||G.gameStart;
-  G.gameEnd=lobby.gameEnd||G.gameEnd;
-  G.isHost=lobby.host===myPid;
+// Enter key shortcuts
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter') return;
+  if(G.phase === 'home') {
+    const code = document.getElementById('inp-code').value.trim();
+    if(code) doJoin(); else doCreate();
+  }
+});
 
-  document.getElementById('lob-code').textContent=lobby.code;
-  document.getElementById('lob-title').textContent='Lobby · '+lobby.code;
-  document.getElementById('lob-role').textContent=G.isHost?'Hôte · Tu gères la partie':'Joueur';
-  document.getElementById('lob-count').textContent=Object.keys(G.players).length;
+// ═════════════════════════════════
+//  LOBBY
+// ═════════════════════════════════
+function renderLobby(lobby) {
+  G.players = lobby.players || {};
+  G.gameStart = lobby.gameStart || G.gameStart;
+  G.gameEnd = lobby.gameEnd || G.gameEnd;
+  G.isHost = lobby.host === myPid;
 
-  const list=document.getElementById('lob-players'); list.innerHTML='';
-  Object.entries(G.players).forEach(([pid,p],i)=>{
-    const isMe=pid===myPid, isH=lobby.host===pid;
-    const row=document.createElement('div');
-    row.className='player-row'+(isMe?' me':'');
-    row.innerHTML=`<div class="avatar" style="background:${ac(p.colorIdx||i)}22;color:${ac(p.colorIdx||i)}">${ini(p.name)}</div>
-    <span class="pname">${p.name}</span>
-    ${isH?'<span class="pbadge badge-host">Hôte</span>':''}
-    ${isMe?'<span class="pbadge badge-you">Toi</span>':''}`;
+  document.getElementById('lob-code').textContent = lobby.code;
+  document.getElementById('lob-title').textContent = 'Lobby · ' + lobby.code;
+  document.getElementById('lob-role').textContent = G.isHost ? 'Hôte · Tu gères la partie' : 'Joueur';
+  document.getElementById('lob-count').textContent = Object.keys(G.players).length;
+
+  const list = document.getElementById('lob-players'); list.innerHTML = '';
+  Object.entries(G.players).forEach(([pid, p], i) => {
+    const isMe = pid === myPid, isH = lobby.host === pid;
+    const row = document.createElement('div');
+    row.className = 'player-row' + (isMe ? ' me' : '');
+    row.innerHTML = `
+      <div class="avatar" style="background:${ac(p.colorIdx||i)}22;color:${ac(p.colorIdx||i)}">${ini(p.name)}</div>
+      <span class="pname">${p.name}</span>
+      ${isH ? '<span class="pbadge badge-host">Hôte</span>' : ''}
+      ${isMe ? '<span class="pbadge badge-you">Toi</span>' : ''}`;
     list.appendChild(row);
   });
 
-  document.getElementById('cfg-card').classList.toggle('hidden',!G.isHost);
-  document.getElementById('wait-msg').classList.toggle('hidden',G.isHost);
-  if(G.gameStart)document.getElementById('cfg-start').value=G.gameStart;
-  if(G.gameEnd)document.getElementById('cfg-end').value=G.gameEnd;
+  document.getElementById('cfg-card').classList.toggle('hidden', !G.isHost);
+  document.getElementById('wait-msg').classList.toggle('hidden', G.isHost);
+  if(G.gameStart) document.getElementById('cfg-start').value = G.gameStart;
+  if(G.gameEnd) document.getElementById('cfg-end').value = G.gameEnd;
 }
-function copyCode(){
-  navigator.clipboard.writeText(G.code).then(()=>{toast('Code copié !');}).catch(()=>{toast(G.code);});
+
+function copyCode() {
+  navigator.clipboard.writeText(G.code).then(() => toast('Code copié !')).catch(() => toast(G.code));
 }
-function shareURL(){
-  const u=window.location.origin+window.location.pathname+'?code='+G.code;
-  navigator.clipboard.writeText(u).then(()=>toast('Lien copié !')).catch(()=>toast(u));
+
+function shareURL() {
+  const u = window.location.origin + window.location.pathname + '?code=' + G.code;
+  if(navigator.share) {
+    navigator.share({ title:'WikiRace', text:'Rejoins ma partie WikiRace !', url:u }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(u).then(() => toast('Lien copié !')).catch(() => toast(u));
+  }
 }
-function buildPresets(){
-  const c=document.getElementById('presets');if(!c)return;c.innerHTML='';
-  PRESETS.forEach(p=>{
-    const b=document.createElement('button');b.className='preset-btn';
-    b.textContent=p.s+' → '+p.e;
-    b.onclick=()=>{document.getElementById('cfg-start').value=p.s;document.getElementById('cfg-end').value=p.e;};
+
+function buildPresets() {
+  const c = document.getElementById('presets'); if(!c) return; c.innerHTML = '';
+  PRESETS.forEach(p => {
+    const b = document.createElement('button'); b.className = 'preset-btn';
+    b.textContent = p.s + ' → ' + p.e;
+    b.onclick = () => {
+      document.getElementById('cfg-start').value = p.s;
+      document.getElementById('cfg-end').value = p.e;
+    };
     c.appendChild(b);
   });
 }
-function doLeave(){if(ws)ws.close();G={...G,code:'',phase:'home'};showScreen('home');}
-function doStart(){
-  const s=document.getElementById('cfg-start').value.trim();
-  const e=document.getElementById('cfg-end').value.trim();
-  if(!s||!e){toast('Définis les deux pages !');return;}
-  send({type:'start_game',start:s,end:e});
+
+async function doRandom(inputId, btn) {
+  const orig = btn.textContent;
+  btn.textContent = '⏳…';
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/api/random');
+    const data = await resp.json();
+    if(data.title) document.getElementById(inputId).value = data.title;
+  } catch(e) {
+    toast('Erreur réseau');
+  }
+  btn.textContent = orig;
+  btn.disabled = false;
 }
 
-// ── GAME START ──
-function onGameStart(msg){
-  G.gameStart=msg.start; G.gameEnd=msg.end; G.phase='playing';
-  G.myPath=[]; G.myClicks=0; G.myFinished=false; G.myFinishTime=0;
-  Object.values(G.players).forEach(p=>{p.path=[];p.clicks=0;p.finished=false;p.finishTime=0;});
+function doLeave() {
+  if(ws) ws.close();
+  G = {...G, code:'', phase:'home'};
+  showScreen('home');
+}
 
-  document.getElementById('g-start').textContent=msg.start;
-  document.getElementById('g-end').textContent=msg.end;
-  document.getElementById('g-clicks').textContent='0';
-  document.getElementById('g-timer').textContent='00:00';
-  document.getElementById('host-ctrl').style.display=G.isHost?'flex':'none';
+async function doStart() {
+  const s = document.getElementById('cfg-start').value.trim();
+  const e = document.getElementById('cfg-end').value.trim();
+  if(!s || !e) { toast('Définis les deux pages !'); return; }
 
-  const cdRoute=document.getElementById('cd-route');
-  cdRoute.textContent=msg.start+' → '+msg.end;
-  const ov=document.getElementById('ov-countdown');
-  const num=document.getElementById('cd-num');
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
+  btn.textContent = 'Vérification…';
+
+  try {
+    // Validate both articles exist on Wikipedia
+    const [sRes, eRes] = await Promise.all([
+      fetch('/api/resolve?title=' + encodeURIComponent(s)).then(r=>r.json()),
+      fetch('/api/resolve?title=' + encodeURIComponent(e)).then(r=>r.json()),
+    ]);
+
+    if(!sRes.found) {
+      toast('Article de départ introuvable : ' + s, 'red');
+      btn.disabled = false; btn.textContent = 'Lancer la partie';
+      return;
+    }
+    if(!eRes.found) {
+      toast('Article d\'arrivée introuvable : ' + e, 'red');
+      btn.disabled = false; btn.textContent = 'Lancer la partie';
+      return;
+    }
+
+    // Use resolved (canonical) titles
+    const startTitle = sRes.title;
+    const endTitle = eRes.title;
+
+    // Update inputs with resolved titles
+    document.getElementById('cfg-start').value = startTitle;
+    document.getElementById('cfg-end').value = endTitle;
+
+    send({type:'start_game', start: startTitle, end: endTitle, startTitle, endTitle});
+  } catch(err) {
+    toast('Erreur de vérification', 'red');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Lancer la partie';
+}
+
+// ═════════════════════════════════
+//  GAME START
+// ═════════════════════════════════
+function onGameStart(msg) {
+  G.gameStart = msg.start;
+  G.gameEnd = msg.end;
+  G.phase = 'playing';
+  G.myPath = [];
+  G.myClicks = 0;
+  G.myFinished = false;
+  G.myFinishTime = 0;
+  G.navigating = false;
+  G.navRetryCount = 0;
+  Object.values(G.players).forEach(p => {
+    p.path = []; p.clicks = 0; p.finished = false; p.finishTime = 0;
+  });
+
+  document.getElementById('g-start').textContent = msg.start;
+  document.getElementById('g-start').title = msg.start;
+  document.getElementById('g-end').textContent = msg.end;
+  document.getElementById('g-end').title = msg.end;
+  document.getElementById('g-clicks').textContent = '0';
+  document.getElementById('g-timer').textContent = '00:00';
+  document.getElementById('host-ctrl').style.display = G.isHost ? 'flex' : 'none';
+
+  // Countdown overlay
+  const cdRoute = document.getElementById('cd-route');
+  cdRoute.textContent = msg.start + ' → ' + msg.end;
+  const ov = document.getElementById('ov-countdown');
+  const num = document.getElementById('cd-num');
   ov.classList.add('on');
 
-  let c=3; num.textContent=c;
-  const iv=setInterval(()=>{
+  let c = 3; num.textContent = c;
+  const iv = setInterval(() => {
     c--;
-    if(c<=0){clearInterval(iv);ov.classList.remove('on');launchGame();}
-    else num.textContent=c;
-  },1000);
+    if(c <= 0) { clearInterval(iv); ov.classList.remove('on'); launchGame(); }
+    else num.textContent = c;
+  }, 1000);
 }
-function launchGame(){
+
+function launchGame() {
   showScreen('game');
   renderLivePlayers();
-  G.timerStart=Date.now();
-  if(G.timerIv)clearInterval(G.timerIv);
-  G.timerIv=setInterval(()=>{
-    if(G.myFinished)return;
-    document.getElementById('g-timer').textContent=fmtMs(Date.now()-G.timerStart);
-  },400);
+  G.timerStart = Date.now();
+  if(G.timerIv) clearInterval(G.timerIv);
+  G.timerIv = setInterval(() => {
+    if(G.myFinished) return;
+    document.getElementById('g-timer').textContent = fmtMs(Date.now() - G.timerStart);
+  }, 250);
   navigateTo(G.gameStart, true);
 }
 
-// ── WIKI NAVIGATION ──
-let navLock=false;
-let loadTimeout=null;
+// ═════════════════════════════════
+//  WIKI NAVIGATION — ROBUST VERSION
+// ═════════════════════════════════
+let navLoadTimeout = null;
+let currentNavId = 0;
 
-function navigateTo(title,isFirst=false){
-  if(navLock&&!isFirst)return;
-  if(G.myFinished&&!isFirst)return;
-  navLock=true; setTimeout(()=>navLock=false,600);
-  const frame=document.getElementById('wiki-frame');
-  const banner=document.getElementById('g-page');
-  banner.textContent='Chargement…'; banner.style.color='var(--muted)';
-  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(title));
-  if(!isFirst){G.myClicks++;document.getElementById('g-clicks').textContent=G.myClicks;}
-  if(isFirst)G.myPath=[title]; else if(G.myPath[G.myPath.length-1]!==title)G.myPath.push(title);
-  renderMyPath(); checkWin(title); broadcastMyUpdate();
-  clearTimeout(loadTimeout);
-  loadTimeout=setTimeout(()=>{
-    banner.textContent=title+' — timeout ?'; banner.style.color='var(--red)';
-    showRetryBar(title);
-  },9000);
+function showWikiLoading(title) {
+  const ov = document.getElementById('wiki-loading');
+  const sub = document.getElementById('wiki-loading-title');
+  sub.textContent = title || '';
+  ov.classList.add('on');
 }
 
-function showRetryBar(title){
-  let bar=document.getElementById('retry-bar');
-  if(!bar){bar=document.createElement('div');bar.id='retry-bar';
-    bar.style.cssText='position:absolute;top:0;left:0;right:0;background:#1a0404;border-bottom:1px solid #5a1010;padding:8px 16px;display:flex;align-items:center;gap:10px;z-index:50;font-size:13px;color:var(--red)';
-    document.querySelector('.frame-area').appendChild(bar);}
-  bar.style.display='flex';
-  bar.innerHTML='<span style="flex:1">La page ne repond pas.</span>'
-    +'<button onclick="retryPage()" style="padding:6px 14px;background:var(--accent);color:#000;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">Reessayer</button>'
-    +'<button onclick="goBack()" style="padding:6px 14px;background:transparent;color:var(--muted2);border:1px solid var(--border2);border-radius:6px;font-size:13px;cursor:pointer">Page precedente</button>';
-}
-function hideRetryBar(){const b=document.getElementById('retry-bar');if(b)b.style.display='none';}
-function retryPage(){
-  clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
-  const title=G.myPath[G.myPath.length-1]||G.gameStart;
-  const frame=document.getElementById('wiki-frame');
-  document.getElementById('g-page').textContent='Chargement…';
-  document.getElementById('g-page').style.color='var(--muted)';
-  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(title));
-  loadTimeout=setTimeout(()=>showRetryBar(title),9000);
-}
-function goBack(){
-  clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
-  if(G.myPath.length>1)G.myPath.pop();
-  const prev=G.myPath[G.myPath.length-1]||G.gameStart;
-  const frame=document.getElementById('wiki-frame');
-  document.getElementById('g-page').textContent='Chargement…';
-  frame.src=PROXY_BASE+'/wiki/'+encodeURIComponent(slug(prev));
-  renderMyPath(); broadcastMyUpdate();
-  loadTimeout=setTimeout(()=>showRetryBar(prev),9000);
+function hideWikiLoading() {
+  document.getElementById('wiki-loading').classList.remove('on');
 }
 
-window.addEventListener('message',e=>{
-  if(!e.data||typeof e.data!=='object')return;
-  switch(e.data.type){
-    case'wiki_navigate': navigateTo(e.data.title); break;
-    case'wiki_loaded':{
-      clearTimeout(loadTimeout); hideRetryBar(); navLock=false;
-      const t=e.data.title; if(!t)break;
-      const banner=document.getElementById('g-page');
-      banner.textContent=t; banner.style.color='';
-      if(G.myPath.length>0&&norm(G.myPath[G.myPath.length-1])!==norm(t)){
-        G.myPath[G.myPath.length-1]=t;
-        renderMyPath(); checkWin(t); broadcastMyUpdate();
-      }
-      break;
+function navigateTo(title, isFirst = false) {
+  if(G.myFinished) return;
+  if(G.navigating && !isFirst) return; // prevent rapid double clicks
+
+  G.navigating = true;
+  G.lastNavTitle = title;
+  G.navRetryCount = 0;
+
+  const navId = ++currentNavId;
+  const frame = document.getElementById('wiki-frame');
+  const proxyURL = PROXY_BASE + '/wiki/' + encodeURIComponent(slug(title));
+
+  if(!isFirst) {
+    G.myClicks++;
+    document.getElementById('g-clicks').textContent = G.myClicks;
+  }
+
+  if(isFirst) {
+    G.myPath = [title];
+  } else if(G.myPath[G.myPath.length - 1] !== title) {
+    G.myPath.push(title);
+  }
+
+  document.getElementById('g-page').textContent = title;
+  renderMyPath();
+  showWikiLoading(title);
+
+  // Set a timeout — if page doesn't load in 12 seconds, retry
+  if(navLoadTimeout) clearTimeout(navLoadTimeout);
+  navLoadTimeout = setTimeout(() => {
+    if(currentNavId === navId && G.navigating) {
+      retryNavigation(title, navId);
     }
-    case'wiki_retry': retryPage(); break;
-    case'wiki_back':  goBack();  break;
+  }, 12000);
+
+  frame.src = proxyURL;
+
+  broadcastMyUpdate();
+}
+
+function retryNavigation(title, navId) {
+  if(currentNavId !== navId) return; // stale retry
+  G.navRetryCount++;
+
+  if(G.navRetryCount > 3) {
+    // Give up after 3 retries, show error
+    G.navigating = false;
+    hideWikiLoading();
+    toast('Impossible de charger "' + title + '"', 'red');
+    // Remove last path entry since it failed
+    if(G.myPath.length > 1 && G.myPath[G.myPath.length-1] === title) {
+      G.myPath.pop();
+      G.myClicks = Math.max(0, G.myClicks - 1);
+      document.getElementById('g-clicks').textContent = G.myClicks;
+      renderMyPath();
+      broadcastMyUpdate();
+    }
+    return;
+  }
+
+  toast('Rechargement… (tentative ' + G.navRetryCount + '/3)');
+  const frame = document.getElementById('wiki-frame');
+  const proxyURL = PROXY_BASE + '/wiki/' + encodeURIComponent(slug(title));
+
+  // Reset timeout
+  if(navLoadTimeout) clearTimeout(navLoadTimeout);
+  navLoadTimeout = setTimeout(() => {
+    if(currentNavId === navId && G.navigating) {
+      retryNavigation(title, navId);
+    }
+  }, 12000);
+
+  frame.src = ''; // force reset
+  setTimeout(() => { frame.src = proxyURL; }, 100);
+}
+
+function goBack() {
+  // Go back to the previous page in path
+  if(G.myPath.length <= 1) return;
+  G.myPath.pop();
+  const prevTitle = G.myPath[G.myPath.length - 1];
+  G.navigating = false; // allow navigation
+  G.myClicks++; // going back still costs a click
+  document.getElementById('g-clicks').textContent = G.myClicks;
+  document.getElementById('g-page').textContent = prevTitle;
+  renderMyPath();
+
+  showWikiLoading(prevTitle);
+  const frame = document.getElementById('wiki-frame');
+  frame.src = PROXY_BASE + '/wiki/' + encodeURIComponent(slug(prevTitle));
+  broadcastMyUpdate();
+}
+
+// Listen for messages from wiki iframe
+window.addEventListener('message', e => {
+  if(!e.data || !e.data.type) return;
+
+  if(e.data.type === 'wiki_navigate') {
+    G.navigating = false; // allow new navigation
+    navigateTo(e.data.title);
+  }
+
+  if(e.data.type === 'wiki_loaded') {
+    // Page loaded successfully!
+    if(navLoadTimeout) clearTimeout(navLoadTimeout);
+    G.navigating = false;
+    G.navRetryCount = 0;
+    hideWikiLoading();
+
+    const t = e.data.title;
+    if(t) {
+      document.getElementById('g-page').textContent = t;
+      // Update path if title was normalized by Wikipedia
+      if(G.myPath.length > 0 && norm(G.myPath[G.myPath.length-1]) !== norm(t)) {
+        // Title was different (redirect happened)
+        G.myPath[G.myPath.length-1] = t;
+        renderMyPath();
+      }
+      checkWin(t);
+    }
+  }
+
+  if(e.data.type === 'wiki_retry') {
+    // User clicked "go back" in error page
+    goBack();
   }
 });
 
-// ── PATH RENDER ──
-function renderMyPath(){
-  const chain=document.getElementById('g-path');chain.innerHTML='';
-  G.myPath.forEach((p,i)=>{
-    if(i>0){const sep=document.createElement('span');sep.className='psep';sep.textContent='›';chain.appendChild(sep);}
-    const n=document.createElement('span');
-    const isStart=i===0,isCur=i===G.myPath.length-1,isEnd=norm(p)===norm(G.gameEnd);
-    n.className='pn '+(isEnd?'pn-end':isStart?'pn-start':isCur?'pn-cur':'pn-vis');
-    n.title=p; n.textContent=p;
+// ═════════════════════════════════
+//  PATH RENDER
+// ═════════════════════════════════
+function renderMyPath() {
+  const chain = document.getElementById('g-path');
+  chain.innerHTML = '';
+  G.myPath.forEach((p, i) => {
+    if(i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'psep'; sep.textContent = '›';
+      chain.appendChild(sep);
+    }
+    const n = document.createElement('span');
+    const isStart = i === 0;
+    const isCur = i === G.myPath.length - 1;
+    const isEnd = norm(p) === norm(G.gameEnd);
+    n.className = 'pn ' + (isEnd ? 'pn-end' : isStart ? 'pn-start' : isCur ? 'pn-cur' : 'pn-vis');
+    n.title = p;
+    n.textContent = p;
     chain.appendChild(n);
   });
-  // scroll to end
-  chain.scrollLeft=chain.scrollWidth;
+  chain.scrollLeft = chain.scrollWidth;
 }
 
-// ── LIVE PLAYERS ──
-function updatePlayer(msg){
-  if(G.players[msg.pid]){
-    Object.assign(G.players[msg.pid],{path:msg.path,clicks:msg.clicks,finished:msg.finished,finishTime:msg.finishTime});
+// ═════════════════════════════════
+//  LIVE PLAYERS
+// ═════════════════════════════════
+function updatePlayer(msg) {
+  if(G.players[msg.pid]) {
+    Object.assign(G.players[msg.pid], {
+      path: msg.path, clicks: msg.clicks,
+      finished: msg.finished, finishTime: msg.finishTime
+    });
     renderLivePlayers();
+    if(msg.finished) {
+      toast(G.players[msg.pid].name + ' a terminé !');
+    }
   }
 }
-function renderLivePlayers(){
-  const bar=document.getElementById('g-players');if(!bar)return;bar.innerHTML='';
-  Object.entries(G.players).forEach(([pid,p],i)=>{
-    const isMe=pid===myPid;
-    const path=isMe?G.myPath:p.path||[];
-    const clicks=isMe?G.myClicks:(p.clicks||0);
-    const fin=isMe?G.myFinished:p.finished;
-    const curPage=path[path.length-1]||'—';
-    const div=document.createElement('div');
-    div.className='mini-p'+(fin?' done':'')+(isMe?' me-p':'');
-    div.innerHTML=`<div class="mdot" style="background:${ac(p.colorIdx||i)}"></div>
-    <span style="font-size:12px;font-weight:500">${p.name}</span>
-    <span class="mpage" title="${curPage}">${curPage}</span>
-    <span class="mclicks">${clicks}</span>
-    ${fin?`<span style="color:var(--green);font-size:11px">✓</span>`:''}`;
+
+function renderLivePlayers() {
+  const bar = document.getElementById('g-players');
+  if(!bar) return;
+  bar.innerHTML = '';
+  Object.entries(G.players).forEach(([pid, p], i) => {
+    const isMe = pid === myPid;
+    const path = isMe ? G.myPath : p.path || [];
+    const clicks = isMe ? G.myClicks : (p.clicks || 0);
+    const fin = isMe ? G.myFinished : p.finished;
+    const curPage = path[path.length - 1] || '—';
+    const div = document.createElement('div');
+    div.className = 'mini-p' + (fin ? ' done' : '') + (isMe ? ' me-p' : '');
+    div.innerHTML = `
+      <div class="mdot" style="background:${ac(p.colorIdx||i)}"></div>
+      <span style="font-size:12px;font-weight:500">${p.name}</span>
+      <span class="mpage" title="${curPage}">${curPage}</span>
+      <span class="mclicks">${clicks}</span>
+      ${fin ? '<span style="color:var(--green);font-size:11px">✓</span>' : ''}`;
     bar.appendChild(div);
   });
 }
 
-// ── WIN ──
-function checkWin(title){
-  if(G.myFinished)return;
-  if(norm(title)===norm(G.gameEnd)){
-    G.myFinished=true;
-    G.myFinishTime=Date.now()-G.timerStart;
-    if(G.timerIv)clearInterval(G.timerIv);
+// ═════════════════════════════════
+//  WIN CHECK
+// ═════════════════════════════════
+function checkWin(title) {
+  if(G.myFinished) return;
+  if(norm(title) === norm(G.gameEnd)) {
+    G.myFinished = true;
+    G.myFinishTime = Date.now() - G.timerStart;
+    if(G.timerIv) clearInterval(G.timerIv);
     broadcastMyUpdate();
-    const stat=fmtMs(G.myFinishTime)+' · '+G.myClicks+' clics';
-    document.getElementById('ov-fin-title').textContent='ARRIVÉ !';
-    document.getElementById('ov-fin-sub').textContent='Tu as atteint "'+G.gameEnd+'" !';
-    document.getElementById('ov-fin-stat').textContent=stat;
-    document.getElementById('ov-finish').classList.add('on');
+    // Don't show finish overlay — the server will send game_end to everyone
+    // and onGameEnd will handle the victory/defeat display
   }
 }
-function broadcastMyUpdate(){
-  if(G.players[myPid]){
-    G.players[myPid].path=[...G.myPath];
-    G.players[myPid].clicks=G.myClicks;
-    G.players[myPid].finished=G.myFinished;
-    G.players[myPid].finishTime=G.myFinishTime;
+
+function broadcastMyUpdate() {
+  if(G.players[myPid]) {
+    G.players[myPid].path = [...G.myPath];
+    G.players[myPid].clicks = G.myClicks;
+    G.players[myPid].finished = G.myFinished;
+    G.players[myPid].finishTime = G.myFinishTime;
   }
-  send({type:'player_update',pid:myPid,path:G.myPath,clicks:G.myClicks,finished:G.myFinished,finishTime:G.myFinishTime});
+  send({
+    type: 'player_update', pid: myPid,
+    path: G.myPath, clicks: G.myClicks,
+    finished: G.myFinished, finishTime: G.myFinishTime
+  });
   renderLivePlayers();
 }
-function doForceEnd(){send({type:'force_end'});}
 
-// ── RESULTS ──
-function onGameEnd(results){
+function doForceEnd() { send({type:'force_end'}); }
+
+// ═════════════════════════════════
+//  RESULTS
+// ═════════════════════════════════
+function onGameEnd(results, winnerPid) {
   document.getElementById('ov-finish').classList.remove('on');
-  if(G.timerIv)clearInterval(G.timerIv);
-  G.phase='results';
+  if(G.timerIv) clearInterval(G.timerIv);
+  if(navLoadTimeout) clearTimeout(navLoadTimeout);
+  G.phase = 'results';
+  G.myFinished = true; // force stop for everyone
+  G.navigating = false;
 
-  const winner=results[0];
-  if(winner&&winner.pid===myPid){
-    const f=document.getElementById('win-flash');
-    document.getElementById('win-txt').textContent='VICTOIRE !';
-    f.classList.add('on');setTimeout(()=>f.classList.remove('on'),2800);
+  const winner = results.find(r => r.finished);
+  const iAmWinner = winner && winner.pid === myPid;
+
+  // Show the finish overlay with context
+  const finTitle = document.getElementById('ov-fin-title');
+  const finSub = document.getElementById('ov-fin-sub');
+  const finStat = document.getElementById('ov-fin-stat');
+
+  if(iAmWinner) {
+    finTitle.textContent = 'VICTOIRE !';
+    finSub.textContent = 'Tu as atteint "' + G.gameEnd + '" en premier !';
+    const stat = fmtMs(winner.finishTime) + ' · ' + winner.clicks + ' clic' + (winner.clicks > 1 ? 's' : '');
+    finStat.textContent = stat;
+  } else if(winner) {
+    finTitle.textContent = 'TERMINÉ';
+    finSub.textContent = winner.name + ' a atteint "' + G.gameEnd + '" en premier !';
+    const stat = fmtMs(winner.finishTime) + ' · ' + winner.clicks + ' clic' + (winner.clicks > 1 ? 's' : '');
+    finStat.textContent = stat;
+  } else {
+    finTitle.textContent = 'FIN DE PARTIE';
+    finSub.textContent = 'La partie a été terminée par l\'hôte.';
+    finStat.textContent = '';
   }
 
-  document.getElementById('res-sub').textContent=G.gameStart+' → '+G.gameEnd;
-  const podium=document.getElementById('podium');podium.innerHTML='';
-  const rankClass=['gold','silver','bronze'];
-  results.forEach((r,i)=>{
-    const row=document.createElement('div');row.className='res-row';
-    const pathHTML=buildPathHTML(r.path,G.gameStart,G.gameEnd);
-    row.innerHTML=`<div class="res-rank display ${rankClass[i]||''}">${i+1}</div>
-    <div class="res-info">
-      <div class="res-name">${r.name}${r.pid===myPid?' <span style="color:var(--muted);font-weight:400;font-size:13px">(toi)</span>':''}</div>
-      <div class="res-stats">${r.finished?r.clicks+' clic'+(r.clicks>1?'s':''):''}</div>
-      <div class="res-path">${pathHTML}</div>
-    </div>
-    ${r.finished?`<div class="res-time">${fmtMs(r.finishTime)}</div>`:'<span class="dnf">DNF</span>'}`;
+  document.getElementById('ov-finish').classList.add('on');
+
+  // Show win flash for winner
+  if(iAmWinner) {
+    const f = document.getElementById('win-flash');
+    document.getElementById('win-txt').textContent = 'VICTOIRE !';
+    f.classList.add('on');
+    setTimeout(() => f.classList.remove('on'), 2800);
+  }
+
+  // After a short delay, show results screen
+  setTimeout(() => {
+    document.getElementById('ov-finish').classList.remove('on');
+    showResultsScreen(results);
+  }, iAmWinner ? 3000 : 2500);
+}
+
+function showResultsScreen(results) {
+  document.getElementById('res-sub').textContent = G.gameStart + ' → ' + G.gameEnd;
+  const podium = document.getElementById('podium');
+  podium.innerHTML = '';
+  const rankClass = ['gold', 'silver', 'bronze'];
+
+  // Separate finished and not finished
+  const finished = results.filter(r => r.finished).sort((a,b) => a.finishTime - b.finishTime);
+  const notFinished = results.filter(r => !r.finished);
+  const sorted = [...finished, ...notFinished];
+
+  sorted.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'res-row' + (i === 0 && r.finished ? ' winner' : '');
+    const pathHTML = buildPathHTML(r.path, G.gameStart, G.gameEnd);
+    const rankDisplay = r.finished ? (i + 1) : '—';
+    const rankCls = r.finished ? (rankClass[i] || '') : '';
+    row.innerHTML = `
+      <div class="res-rank display ${rankCls}">${rankDisplay}</div>
+      <div class="res-info">
+        <div class="res-name">${r.name}${r.pid === myPid ? ' <span style="color:var(--muted);font-weight:400;font-size:13px">(toi)</span>' : ''}</div>
+        <div class="res-stats">${r.finished ? r.clicks + ' clic' + (r.clicks > 1 ? 's' : '') : 'N\'a pas terminé'}</div>
+        <div class="res-path">${pathHTML}</div>
+      </div>
+      ${r.finished ? '<div class="res-time">' + fmtMs(r.finishTime) + '</div>' : '<span class="dnf">DNF</span>'}`;
     podium.appendChild(row);
   });
 
-  const acts=document.getElementById('res-actions');acts.innerHTML='';
-  if(G.isHost){
-    const b1=document.createElement('button');b1.className='btn btn-primary';b1.textContent='Rejouer';b1.onclick=doReplay;acts.appendChild(b1);
+  const acts = document.getElementById('res-actions');
+  acts.innerHTML = '';
+  if(G.isHost) {
+    const b1 = document.createElement('button');
+    b1.className = 'btn btn-primary';
+    b1.textContent = '🔄 Rejouer';
+    b1.onclick = doReplay;
+    acts.appendChild(b1);
   } else {
-    const b1=document.createElement('div');b1.className='waiting-msg';b1.textContent='En attente de l\'hôte pour rejouer…';acts.appendChild(b1);
+    const b1 = document.createElement('div');
+    b1.className = 'waiting-msg';
+    b1.textContent = 'En attente de l\'hôte pour rejouer…';
+    acts.appendChild(b1);
   }
-  const b2=document.createElement('button');b2.className='btn';b2.textContent='Accueil';b2.onclick=()=>{if(ws)ws.close();showScreen('home');};acts.appendChild(b2);
+  const b2 = document.createElement('button');
+  b2.className = 'btn';
+  b2.textContent = '🏠 Accueil';
+  b2.onclick = () => { if(ws) ws.close(); showScreen('home'); G.phase = 'home'; };
+  acts.appendChild(b2);
 
   showScreen('results');
 }
-function buildPathHTML(path,start,end){
-  if(!path||path.length===0)return'<span style="color:var(--muted)">Aucun chemin</span>';
-  return path.map((p,i)=>{
-    const isS=i===0,isE=norm(p)===norm(end);
-    const cls=isE?'ps-end':isS?'ps-start':'';
-    const sep=i>0?`<span class="path-step-sep">›</span>`:'';
-    return `${sep}<span class="path-step-node ${cls}">${p}</span>`;
+
+function buildPathHTML(path, start, end) {
+  if(!path || path.length === 0) return '<span style="color:var(--muted)">Aucun chemin</span>';
+  return path.map((p, i) => {
+    const isS = i === 0;
+    const isE = norm(p) === norm(end);
+    const cls = isE ? 'ps-end' : isS ? 'ps-start' : '';
+    const sep = i > 0 ? '<span class="path-step-sep"> › </span>' : '';
+    return sep + '<span class="path-step-node ' + cls + '">' + p + '</span>';
   }).join('');
 }
-function doReplay(){send({type:'back_to_lobby'});}
 
-// ── SCREENS ──
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+id).classList.add('active');
+function doReplay() { send({type:'back_to_lobby'}); }
+
+// ═════════════════════════════════
+//  SCREEN MANAGEMENT
+// ═════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
 }
 
-// ── TOAST ──
+// ═════════════════════════════════
+//  TOAST
+// ═════════════════════════════════
 let toastTm;
-function toast(msg, color=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.borderColor=color==='red'?'var(--red)':'';
+function toast(msg, color = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color === 'red' ? 'var(--red)' : '';
   t.classList.add('on');
   clearTimeout(toastTm);
-  toastTm=setTimeout(()=>t.classList.remove('on'),2800);
+  toastTm = setTimeout(() => t.classList.remove('on'), 3000);
 }
 </script>
 </body>

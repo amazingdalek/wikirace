@@ -1,7 +1,7 @@
 {
   "name": "wikirace-online",
-  "version": "1.0.0",
-  "description": "WikiRace multiplayer online game",
+  "version": "2.0.0",
+  "description": "WikiRace — Multiplayer Wikipedia racing game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

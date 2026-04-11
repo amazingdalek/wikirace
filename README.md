@@ -1,92 +1,97 @@
-# WikiRace Online — Multijoueur
+# WikiRace v2.0 — Multijoueur Online
 
-Jeu WikiRace multijoueur en temps réel avec lobby, proxy Wikipedia et suivi de chemin.
+Course Wikipedia multijoueur en temps réel. Navigue de page en page plus vite que tes amis !
 
-## Stack technique
-- **Backend** : Node.js pur (zéro framework), WebSocket natif (`ws`)
-- **Frontend** : HTML/CSS/JS vanilla, une seule page
-- **Proxy** : Wikipedia français proxifié côté serveur (résout les problèmes CORS)
-- **Sync** : WebSocket bidirectionnel full-duplex
+## Fonctionnalités
 
----
+- **Lobby en ligne** : Crée ou rejoins un lobby avec un code à 5 caractères
+- **Multijoueur temps réel** : Vois la progression de tous les joueurs en direct
+- **Chemin tracé** : Ton parcours complet est affiché et enregistré
+- **Détection automatique** : La page d'arrivée est détectée automatiquement
+- **Gestion des erreurs** : Retry automatique si une page ne charge pas
+- **Résolution des titres** : Les articles sont vérifiés et normalisés avant le lancement
+- **Reconnexion auto** : Si la connexion est perdue, le client se reconnecte
+- **Classement final** : Résultats avec temps, nombre de clics et chemin complet
 
-## Déploiement gratuit sur Render.com (recommandé)
-
-### 1. Préparer le repo GitHub
-```bash
-git init
-git add .
-git commit -m "Initial WikiRace"
-# Pousse sur GitHub
-```
-
-### 2. Déployer sur Render
-1. Va sur [render.com](https://render.com) → "New Web Service"
-2. Connecte ton repo GitHub
-3. Configure :
-   - **Environment** : `Node`
-   - **Build command** : `npm install`
-   - **Start command** : `node server.js`
-   - **Plan** : Free
-4. Clique "Create Web Service"
-5. Ton jeu sera dispo sur `https://ton-app.onrender.com`
-
----
-
-## Déploiement sur Railway.app
+## Installation & Lancement
 
 ```bash
-npm install -g @railway/cli
-railway login
-railway init
-railway up
-```
-
----
-
-## Lancer en local
-
-```bash
+# 1. Installer les dépendances
 npm install
-node server.js
-# Ouvre http://localhost:3000
-# Partage ton IP locale (192.168.x.x:3000) avec tes amis sur le même réseau
+
+# 2. Lancer le serveur
+npm start
 ```
 
----
+Le serveur démarre sur `http://localhost:3000` par défaut.
+
+Pour changer le port :
+```bash
+PORT=8080 npm start
+```
+
+## Déploiement en ligne
+
+### Option 1 : Render.com (gratuit)
+1. Push le projet sur GitHub
+2. Créer un "Web Service" sur render.com
+3. Build command: `npm install`
+4. Start command: `npm start`
+5. Le WebSocket fonctionne automatiquement en `wss://`
+
+### Option 2 : Railway.app
+1. Connecter le repo GitHub
+2. Railway détecte automatiquement Node.js
+3. Déployé en quelques secondes
+
+### Option 3 : VPS (DigitalOcean, OVH, etc.)
+```bash
+git clone <repo>
+cd wikirace-online
+npm install
+PORT=3000 node server.js
+```
+
+Configurer un reverse proxy Nginx avec WebSocket :
+```nginx
+server {
+    listen 80;
+    server_name wikirace.exemple.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│                  server.js                   │
-│                                              │
-│  HTTP /               → public/index.html   │
-│  HTTP /wiki-proxy/*   → proxy Wikipedia FR  │
-│  WS   /               → lobby + game sync   │
-└─────────────────────────────────────────────┘
+wikirace-online/
+├── server.js          # Serveur Node.js (HTTP + WebSocket + Wiki proxy)
+├── public/
+│   └── index.html     # Client complet (HTML/CSS/JS)
+├── package.json
+└── README.md
 ```
 
-## Messages WebSocket
+- **WebSocket** : Gestion des lobbies, synchronisation temps réel
+- **Wiki Proxy** : Proxy serveur vers fr.wikipedia.org avec réécriture des liens
+- **API /api/resolve** : Vérifie et normalise les titres d'articles Wikipedia
+- **API /api/random** : Renvoie un article aléatoire
 
-| Type | Direction | Description |
-|------|-----------|-------------|
-| `create_lobby` | C→S | Crée un nouveau lobby |
-| `join_lobby` | C→S | Rejoint un lobby existant |
-| `start_game` | C→S (hôte) | Lance la partie |
-| `player_update` | C→S | Envoie progression du joueur |
-| `force_end` | C→S (hôte) | Force la fin |
-| `back_to_lobby` | C→S (hôte) | Retour au lobby |
-| `lobby_created/joined` | S→C | Confirmation + état |
-| `game_start` | S→C | Démarre le compte à rebours |
-| `game_end` | S→C | Envoie les résultats finaux |
+## Corrections v2.0
 
-## Fonctionnalités
-- Lobby avec code 6 caractères
-- Lien de partage automatique (`?code=XXXXXX`)
-- Proxy Wikipedia FR (navigation sans CORS)
-- Détection automatique de la page d'arrivée
-- Suivi du chemin en temps réel pour tous les joueurs
-- Timer et compteur de clics
-- Classement final avec chemins complets
-- L'hôte peut forcer la fin et relancer une partie
+- ✅ Gestion des redirections Wikipedia (301/302)
+- ✅ Retry automatique si une page ne charge pas (max 3 tentatives)
+- ✅ Validation des articles avant le lancement de la partie
+- ✅ Page d'erreur stylée avec bouton retour au lieu d'un 404 brut
+- ✅ Protection contre les double-clics rapides
+- ✅ Reconnexion WebSocket automatique
+- ✅ Keepalive pour éviter les déconnexions idle
+- ✅ Bouton "Aléatoire" côté serveur (plus fiable)
